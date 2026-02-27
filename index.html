@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>族語小勇士 - 學生挑戰版</title>
+<style>
+/* ===== 樣式優化 ===== */
+body {
+  margin: 0; height: 100vh; overflow: hidden;
+  font-family: "Noto Sans TC", sans-serif;
+  background: linear-gradient(135deg, #1f3d2b 0%, #355f3b 100%);
+  color: white; display: flex; justify-content: center; align-items: center;
+}
+.container { width: 95vw; height: 95vh; display: flex; flex-direction: column; }
+.card {
+  flex-grow: 1; background: #2e5a3f; border-radius: 20px;
+  padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column; border: 3px solid rgba(255,255,255,0.1);
+}
+header { text-align: center; margin-bottom: 10px; }
+h1 { font-size: 26px; color: #ffd700; margin: 0; }
+.level-indicator { font-size: 14px; opacity: 0.8; margin-top: 5px; }
+
+#game-content {
+  flex-grow: 1; border-radius: 15px; overflow: hidden;
+  background: rgba(0,0,0,0.2); margin: 10px 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+iframe { width: 100%; height: 100%; border: none; }
+
+/* 動作挑戰樣式 */
+.quiz-emoji { font-size: 120px; margin-bottom: 10px; }
+.quiz-name { font-size: 40px; font-weight: bold; color: #ffd700; }
+.quiz-hint { font-size: 20px; margin-top: 10px; color: #fff; }
+
+.footer-btn {
+  width: 100%; padding: 18px; border: none; border-radius: 15px;
+  font-size: 22px; font-weight: bold; cursor: pointer;
+  background: #d4af37; color: black; box-shadow: 0 5px 0 #8a6d1d;
+}
+.footer-btn:active { transform: translateY(4px); box-shadow: none; }
+.secondary-btn {
+  background: #8b2c2c; color: white; box-shadow: 0 5px 0 #5a1a1a; margin-top: 10px;
+}
+.camera-btn { background: #3498db; color: white; box-shadow: 0 5px 0 #2980b9; }
+
+/* 隱藏原生 input 用於觸發相機 */
+#camera-input { display: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card">
+    <header>
+      <h1 id="level-title">小勇士出發！</h1>
+      <div class="level-indicator" id="step-info">載入中...</div>
+    </header>
+
+    <div id="game-content"></div>
+
+    <div id="button-group">
+      </div>
+  </div>
+</div>
+
+<input type="file" accept="image/*" capture="environment" id="camera-input">
+
+<script>
+const actions = [
+  { emoji: "🧑‍🦱", name: "qulu", move: "摸摸頭" },
+  { emoji: "🦶", name: "kula", move: "原地踏步" },
+  { emoji: "✋", name: "lima", move: "揮揮手" },
+  { emoji: "👄", name: "angalj", move: "張開嘴巴" },
+  { emoji: "👃", name: "ngudjus", move: "指鼻子" },
+  { emoji: "👂", name: "calinga", move: "拉拉耳朵" },
+  { emoji: "👀", name: "maca", move: "眨眨眼" },
+  { emoji: "🧍", name: "kinacavacavan", move: "原地轉一圈" }
+];
+
+const studentLevels = [
+  { title: "第一關：聽力特訓", type: "wordwall", url: "https://wordwall.net/tc/embed/97a1c0d9a947440386a4696dfb9bf5bd?themeId=1&templateId=3&fontStackId=0" },
+  { title: "第二關：語音挑戰", type: "wordwall", url: "https://wordwall.net/embed/d16ae89653a94487b39a3d830521ae02?themeId=1&templateId=8&fontStackId=0" },
+  { title: "第三關：隨機動作挑戰", type: "quiz" },
+  { title: "終極關卡：掃描 QR Code", type: "camera" },
+  { title: "頒獎典禮", type: "cert" }
+];
+
+let currentIdx = 0;
+
+function render() {
+  const level = studentLevels[currentIdx];
+  const content = document.getElementById("game-content");
+  const btnGroup = document.getElementById("button-group");
+  
+  document.getElementById("level-title").textContent = level.title;
+  document.getElementById("step-info").textContent = `進度：${currentIdx + 1} / ${studentLevels.length}`;
+  
+  content.innerHTML = "";
+  btnGroup.innerHTML = "";
+
+  if (level.type === "wordwall") {
+    content.innerHTML = `<iframe src="${level.url}" allowfullscreen></iframe>`;
+    btnGroup.innerHTML = `<button class="footer-btn" onclick="nextStep()">完成本關，下一關！</button>`;
+  } 
+  else if (level.type === "quiz") {
+    renderQuizItem();
+  }
+  else if (level.type === "camera") {
+    content.innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        <div style="font-size:80px;">📸</div>
+        <h2 style="color:#ffd700;">終極勇士任務</h2>
+        <p style="font-size:22px;">請點擊下方按鈕<br>開啟相機掃描現場的 QR Code</p>
+      </div>`;
+    btnGroup.innerHTML = `
+      <button class="footer-btn camera-btn" onclick="openCamera()">開啟相機掃描</button>
+      <button class="footer-btn secondary-btn" onclick="nextStep()">完成掃描，領取獎勵</button>
+    `;
+  }
+  else if (level.type === "cert") {
+    content.innerHTML = `<div style="text-align:center;"><div style="font-size:100px">🏆</div><h2>勇士特訓達成！</h2><p>恭喜完成所有挑戰</p></div>`;
+    btnGroup.innerHTML = `<button class="footer-btn" onclick="resetGame()">重新挑戰</button>`;
+  }
+}
+
+// 渲染隨機題目
+function renderQuizItem() {
+  const content = document.getElementById("game-content");
+  const btnGroup = document.getElementById("button-group");
+  const q = actions[Math.floor(Math.random() * actions.length)];
+
+  content.innerHTML = `
+    <div style="font-size:24px; color:#ffd700; margin-bottom:15px;">【 請看大螢幕 】</div>
+    <div class="quiz-emoji">${q.emoji}</div>
+    <div class="quiz-name">${q.name}</div>
+    <div class="quiz-hint">${q.move}</div>
+  `;
+
+  btnGroup.innerHTML = `
+    <button class="footer-btn" onclick="renderQuizItem()">換一題練習</button>
+    <button class="footer-btn secondary-btn" onclick="nextStep()">我練好了，下一關！</button>
+  `;
+}
+
+// 啟動相機功能
+function openCamera() {
+  // 觸發隱藏的 input，這在行動裝置上會直接詢問是否開啟相機
+  document.getElementById('camera-input').click();
+}
+
+function nextStep() {
+  currentIdx++;
+  render();
+}
+
+function resetGame() {
+  currentIdx = 0;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
