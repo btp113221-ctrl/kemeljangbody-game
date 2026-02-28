@@ -21,7 +21,7 @@
     padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,.5);
     display: flex; flex-direction: column; text-align: center;
   }
-  h1 { font-size: 50px; color: #ffd700; margin: 10px 0; }
+  h1 { font-size: 46px; color: #ffd700; margin: 10px 0; }
   #display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
   iframe { width: 100%; height: 100%; border: none; border-radius: 15px; background: white; }
   
@@ -57,8 +57,7 @@
 const levels = [
   { title: "準備好了嗎？", type: "start" },
   { title: "第一關：聽力特訓", type: "ww", url: "https://wordwall.net/tc/embed/97a1c0d9a947440386a4696dfb9bf5bd?themeId=1&templateId=3&fontStackId=0" },
-  { title: "第二關：說話挑戰", type: "say" },
-  { title: "第三關：動作挑戰", type: "watch" },
+  { title: "第二、三關：說話、做動作大挑戰", type: "watch", icon: "📢🕺💃" },
   { title: "終極關卡：Kahhot!", type: "camera" },
   { title: "頒獎典禮", type: "cert" }
 ];
@@ -86,25 +85,17 @@ function render() {
     btnArea.innerHTML = `<button class="red" onclick="next()">完成本關，下一關</button>`;
   }
 //2-2 說話挑戰
-else if (level.type === "say"){
-display.innerHTML = `
-            <h2 style="color:#ffd700;,font-size:60px;">【 請看大螢幕 】</h2>
-      <p style="font-size:30px;">跟著老師一起！<br>說出正確的族語~</p>
-    `;
- btnArea.innerHTML = `<button class="red" onclick="next()">完成本關，下一關</button>`;
-
-}
 
   // 3. 第三關：請看大螢幕 (取消前情提要，只剩一個按鈕)
-  else if (level.type === "watch") {
+  if (level.type === "watch") {
     display.innerHTML = `
+<div class="big-icon" style="font-size:100px; margin-bottom:20px;">${level.icon}</div>
             <h2 style="color:#ffd700;,font-size:40px;">【 請看大螢幕 】</h2>
-      <p style="font-size:30px;">請看題目<br>做出正確的族語動作！</p>
-    `;
-    btnArea.innerHTML = `<button class="gold" onclick="next()">我記住了，進入最終關卡</button>`;
+          `;
+    btnArea.innerHTML = `<button class="gold" onclick="next()">進入終極關卡</button>`;
   }
 
-  // 4. 終極相機關卡
+  // 4. 終極關卡
   else if (level.type === "camera") {
     display.innerHTML = `
        <div class="big-icon">📱</div>
@@ -119,7 +110,10 @@ display.innerHTML = `
     display.innerHTML = `<div class="big-icon">🏆</div><h2>勇士特訓達成！</h2>`;
     btnArea.innerHTML = `<button class="gold" onclick="currentIdx=0;render();">重新挑戰</button>`;
   }
+
+
 }
+
 
 function next() {
   if (currentIdx < levels.length - 1) {
