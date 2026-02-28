@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>身體族語小勇士 闖關訓練</title>
+
+<style>
+/* ===== 全畫面鎖定 ===== */
+body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Noto Sans TC", sans-serif;
+  background: radial-gradient(circle at top, #355f3b, #1f3d2b);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ===== 主舞台 ===== */
+.layout {
+  width: 98vw;
+  height: 92vh;
+  display: flex;
+  gap: 20px;
+}
+
+/* 左：Canva（2/3） */
+.left {
+  flex: 2;
+  height: 100%;
+}
+.left iframe {
+  width: 98%;
+  height: 100%;
+  border: none;
+  border-radius: 25px;
+}
+
+/* 右：闖關（1/3） */
+.right {
+  flex: 1;
+  height: 90%;
+}
+
+/* ===== 闖關卡片 ===== */
+.card {
+  height: 100%;
+  background: #2e5a3f;
+  border-radius: 25px;
+  padding: 36px;
+  box-shadow: 0 15px 32px rgba(0,0,0,.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+}
+
+button {
+  width: 100%;
+  padding: 18px;
+  margin-top: 16px;
+  border: none;
+  border-radius: 18px;
+  font-size: 26px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.gold { background: #d4af37; color: black; font-weight: bold; }
+.red  { background: #8b2c2c; color: white; font-weight: bold; }
+.hidden { display: none; }
+
+
+/* ===== 動作排版 ===== */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 調整為2欄在嵌入模式下較清晰 */
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 16px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.action-item {
+  background: rgba(255,255,255,0.15);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+h1 { font-size: 40px; margin-bottom: 10px; }
+h2 { font-size: 30px; color: #ffd700; margin-top: 0; }
+p { font-size: 22px; }
+
+.trophy {
+  font-size: 150px;
+  margin: 10px 0;
+  animation: trophyPop 1.2s ease-out;
+}
+
+@keyframes trophyPop {
+  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.award-title {
+  color: #ffd700;
+  font-size: 48px;
+}
+
+/* 讓 Wordwall iframe 滿版一點 */
+.ww-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+  <div class="left">
+    <iframe
+      src="https://www.canva.com/design/DAHAiN9EN54/OT2ZvFYJkdpeIPtuT7u4Uw/view?embed"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <div id="game-ui">
+        <h1>🌲 族語小勇士</h1>
+        <h2 id="title"></h2> 
+        <div id="content"></div>
+        
+        <button id="goBtn" class="gold hidden">前往關卡</button>
+        <button id="nextBtn" class="red hidden">🎉 闖關成功！</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const levels = [
+  { title: "聽-vuvu的悄悄話", embed: "https://wordwall.net/tc/embed/97a1c0d9a947440386a4696dfb9bf5bd?themeId=1&templateId=3&fontStackId=0" },
+  { title: "說-勇士的傳聲筒", embed: "https://wordwall.net/embed/d16ae89653a94487b39a3d830521ae02?themeId=1&templateId=8&fontStackId=0" },
+  { title: "做-守護部落的舞蹈", action: true },
+  { title: "終極關卡", tablet: true },
+  { title: "頒獎典禮", cert: true }
+];
+
+const actions = [
+  { emoji: "🧑‍🦱", name: "qulu", move: "摸摸頭" },
+  { emoji: "🦶", name: "kula", move: "原地踏步" },
+  { emoji: "✋", name: "lima", move: "揮揮手" },
+  { emoji: "👄", name: "angalj", move: "張開嘴巴" },
+  { emoji: "👃", name: "ngudjus", move: "指鼻子" },
+  { emoji: "👂", name: "calinga", move: "拉拉耳朵" },
+  { emoji: "👀", name: "maca", move: "眨眨眼" },
+  { emoji: "🧍", name: "kinacavacavan", move: "原地轉一圈" }
+];
+
+let current = 0;
+let stage3Phase = "intro";
+let gameStarted = false;
+
+const titleEl = document.getElementById("title");
+const contentEl = document.getElementById("content");
+const goBtn = document.getElementById("goBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+function startGame() {
+  gameStarted = true;
+  current = 0;
+  stage3Phase = "intro";
+  render();
+}
+
+function render() {
+  // 清除內容
+  contentEl.innerHTML = "";
+  
+  /* ===== 尚未進入遊戲 ===== */
+  if (!gameStarted) {
+    titleEl.textContent = "準備好了嗎？";
+    contentEl.innerHTML = `
+      <p>點擊下方按鈕開始訓練</p>
+      <button class="gold" style="font-size:32px; width: 80%; margin: 20px auto;" onclick="startGame()">
+        🎮 冒險開始！
+      </button>
+    `;
+    goBtn.classList.add("hidden");
+    nextBtn.classList.add("hidden");
+    return;
+  }
+
+  const level = levels[current];
+  titleEl.textContent = level.title;
+  
+  // 預設按鈕狀態
+  goBtn.classList.add("hidden");
+  nextBtn.classList.remove("hidden");
+
+  /* ===== 第一、二關：Wordwall 嵌入 ===== */
+  if (level.embed) {
+    contentEl.innerHTML = `
+      <div class="ww-container">
+        <iframe 
+          src="${level.embed}" 
+          style="width:100%; height:450px; border:none; border-radius:15px;" 
+          allowfullscreen>
+        </iframe>
+      </div>`;
+    return;
+  }
+
+  /* ===== 第三關：動作挑戰 ===== */
+  if (level.action) {
+    if (stage3Phase === "intro") {
+      nextBtn.classList.add("hidden");
+      contentEl.innerHTML = `
+        <div class="action-grid">
+          ${actions.map(a => `
+            <div class="action-item">
+              <div style="font-size:30px">${a.emoji}</div>
+              <strong>${a.name}</strong><br><small>${a.move}</small>
+            </div>
+          `).join("")}
+        </div>
+        <button class="gold" onclick="startQuiz()">我記住了！</button>
+      `;
+    } else if (stage3Phase === "quiz") {
+      renderQuiz();
+    }
+    return;
+  }
+
+  /* ===== 最終關卡：平板使用說明 ===== */
+  if (level.tablet) {
+    contentEl.innerHTML = `
+      <div style="font-size:60px; margin: 20px 0;">📱</div>
+      <p>請拿起桌上的平板<br>掃描老師提供的 QR Code</p>
+    `;
+    return;
+  }
+
+  /* ===== 頒獎 ===== */
+  if (level.cert) {
+    nextBtn.classList.add("hidden");
+    titleEl.innerHTML = "🎊 挑戰達成";
+    contentEl.innerHTML = `
+      <div class="trophy">🏆</div>
+      <h2>你完成了所有挑戰！</h2>
+      <h1 class="award-title">森林勇士</h1>
+      <button class="gold" onclick="location.reload()" style="width:auto; padding: 10px 30px;">重新開始</button>
+    `;
+    return;
+  }
+}
+
+function startQuiz() {
+  stage3Phase = "quiz";
+  render(); // 改用 render 統一管理
+}
+
+function renderQuiz() {
+  const q = actions[Math.floor(Math.random() * actions.length)];
+  nextBtn.classList.add("hidden"); // 測驗中隱藏原本的闖關成功鈕
+
+  contentEl.innerHTML = `
+    <p>🎯 請做出這個動作</p>
+    <div style="font-size:90px; margin: 20px 0;">${q.emoji}</div>
+    <p style="font-size:36px; color:#ffd700;">${q.name}</p>
+    <div style="display:flex; gap:10px;">
+      <button class="gold" onclick="renderQuiz()">下一題</button>
+      <button class="red" onclick="finishStage3()">完成本關</button>
+    </div>
+  `;
+}
+
+function finishStage3() {
+  current++;
+  stage3Phase = "intro";
+  render();
+}
+
+nextBtn.onclick = () => {
+  current++;
+  stage3Phase = "intro";
+  render();
+};
+
+// 初始執行一次
+render();
+</script>
+
+</body>
+</html>
