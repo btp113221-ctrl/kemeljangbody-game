@@ -107,8 +107,10 @@ function render() {
 
   // 5. 頒獎
   else if (level.type === "cert") {
-    display.innerHTML = `<div class="big-icon">🏆</div><h2>勇士特訓達成！</h2>`;
-    btnArea.innerHTML = `<button class="gold" onclick="currentIdx=0;render();">重新挑戰</button>`;
+    display.innerHTML = `
+    <h1 style="color:#ffd700; font-size:72px;">✨🎆完成所有任務🎆✨</h1>
+<div class="big-icon">🏆</div><h2>勇士特訓達成！</h2>`;
+    
   }
 
 
@@ -128,3 +130,4 @@ render();
 
 </body>
 </html>
+
